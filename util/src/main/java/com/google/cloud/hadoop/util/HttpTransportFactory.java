@@ -31,6 +31,7 @@ import java.net.Proxy;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.GeneralSecurityException;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -140,7 +141,10 @@ public class HttpTransportFactory {
         proxyUri != null || proxyCredentials == null,
         "if proxyUri is null than proxyCredentials should be null too");
 
-    HttpClientBuilder httpClientBuilder = ApacheHttpTransport.newDefaultHttpClientBuilder();
+    HttpClientBuilder httpClientBuilder =
+        ApacheHttpTransport.newDefaultHttpClientBuilder()
+            .evictExpiredConnections()
+            .evictIdleConnections(10, TimeUnit.SECONDS);
 
     if (proxyUri != null) {
       httpClientBuilder
