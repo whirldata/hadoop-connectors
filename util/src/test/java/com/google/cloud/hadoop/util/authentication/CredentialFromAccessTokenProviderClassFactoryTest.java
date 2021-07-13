@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2021 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.hadoop.util;
+package com.google.cloud.hadoop.util.authentication;
 
 import static com.google.cloud.hadoop.util.HadoopCredentialConfiguration.ACCESS_TOKEN_PROVIDER_IMPL_SUFFIX;
 import static com.google.common.truth.Truth.assertThat;
@@ -20,7 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.util.Clock;
-import com.google.cloud.hadoop.util.CredentialFromAccessTokenProviderClassFactory.GoogleCredentialWithAccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.CredentialFromAccessTokenProviderClassFactory.GoogleCredentialWithAccessTokenProvider;
 import com.google.cloud.hadoop.util.testing.TestingAccessTokenProvider;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
@@ -67,7 +67,7 @@ public class CredentialFromAccessTokenProviderClassFactoryTest {
   public void testCreateCredentialFromAccessTokenProvider() {
     AccessTokenProvider accessTokenProvider = new TestingAccessTokenProvider();
     GoogleCredential credential =
-        GoogleCredentialWithAccessTokenProvider.fromAccessTokenProvider(clock, accessTokenProvider);
+        GoogleCredentialWithAccessTokenProvider.fromAccessTokenProvider(clock, accessTokenProvider, null);
 
     assertThat(credential.getAccessToken()).isEqualTo(TestingAccessTokenProvider.FAKE_ACCESS_TOKEN);
     assertThat(credential.getExpirationTimeMilliseconds())

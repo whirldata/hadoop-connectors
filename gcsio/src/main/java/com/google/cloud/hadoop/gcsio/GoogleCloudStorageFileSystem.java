@@ -34,6 +34,7 @@ import com.google.cloud.hadoop.gcsio.cooplock.CoopLockOperationDelete;
 import com.google.cloud.hadoop.gcsio.cooplock.CoopLockOperationRename;
 import com.google.cloud.hadoop.util.CheckedFunction;
 import com.google.cloud.hadoop.util.LazyExecutorService;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -135,16 +136,16 @@ public class GoogleCloudStorageFileSystem {
   /**
    * Constructs an instance of GoogleCloudStorageFileSystem.
    *
-   * @param credential OAuth2 credential that allows access to GCS.
+   * @param authenticationInterceptor OAuth2 credential provider that allows access to GCS.
    * @param options Options for how this filesystem should operate and configure its underlying
    *     storage.
    * @throws IOException
    */
   public GoogleCloudStorageFileSystem(
-      Credential credential, GoogleCloudStorageFileSystemOptions options) throws IOException {
+      AuthenticationInterceptor authenticationInterceptor, GoogleCloudStorageFileSystemOptions options) throws IOException {
     this(
         new GoogleCloudStorageImpl(
-            checkNotNull(options, "options must not be null").getCloudStorageOptions(), credential),
+            checkNotNull(options, "options must not be null").getCloudStorageOptions(), authenticationInterceptor),
         options);
     logger.atFiner().log("GoogleCloudStorageFileSystem(options: %s)", options);
   }

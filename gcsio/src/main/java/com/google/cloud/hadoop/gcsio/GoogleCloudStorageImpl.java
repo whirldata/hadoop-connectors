@@ -64,6 +64,7 @@ import com.google.cloud.hadoop.util.ResilientOperation;
 import com.google.cloud.hadoop.util.RetryBoundedBackOff;
 import com.google.cloud.hadoop.util.RetryDeterminer;
 import com.google.cloud.hadoop.util.RetryHttpInitializer;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.CacheBuilder;
@@ -237,12 +238,12 @@ public class GoogleCloudStorageImpl implements GoogleCloudStorage {
   /**
    * Constructs an instance of GoogleCloudStorageImpl.
    *
-   * @param credential OAuth2 credential that allows access to GCS
+   * @param authenticationInterceptor OAuth2 credential that allows access to GCS
    * @throws IOException on IO error
    */
-  public GoogleCloudStorageImpl(GoogleCloudStorageOptions options, Credential credential)
+  public GoogleCloudStorageImpl(GoogleCloudStorageOptions options, AuthenticationInterceptor authenticationInterceptor)
       throws IOException {
-    this(options, new RetryHttpInitializer(credential, options.toRetryHttpInitializerOptions()));
+    this(options, new RetryHttpInitializer(authenticationInterceptor, options.toRetryHttpInitializerOptions()));
   }
 
   public GoogleCloudStorageImpl(

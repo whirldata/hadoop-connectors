@@ -13,7 +13,7 @@
  */
 package com.google.cloud.hadoop.io.bigquery;
 
-import com.google.cloud.hadoop.util.HadoopToStringUtil;
+import com.google.cloud.hadoop.util.authentication.HadoopToStringUtil;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.GoogleLogger;
 import com.google.gson.JsonObject;

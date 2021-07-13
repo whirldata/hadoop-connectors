@@ -19,6 +19,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -33,6 +34,7 @@ import com.google.api.client.http.LowLevelHttpRequest;
 import com.google.api.client.http.LowLevelHttpResponse;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.api.client.util.Sleeper;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.time.Duration;
@@ -53,6 +55,8 @@ public class RetryHttpInitializerTest {
   // Mock to capture calls delegated to an underlying Credential.
   @Mock private Credential mockCredential;
 
+  @Mock private AuthenticationInterceptor mockAuthInterceptor;
+
   // Mock LowLevelHttpRequest always supplied by our fake HttpTransport.
   @Mock private LowLevelHttpRequest mockLowLevelRequest;
 
@@ -66,7 +70,7 @@ public class RetryHttpInitializerTest {
   private HttpRequestFactory requestFactory;
 
   @Before
-  public void setUp() {
+  public void setUp() throws IOException {
     MockitoAnnotations.initMocks(this);
 
     MockHttpTransport fakeTransport =
@@ -78,9 +82,13 @@ public class RetryHttpInitializerTest {
             return mockLowLevelRequest;
           }
         };
+
+    when(mockAuthInterceptor.getCredential()).thenReturn(mockCredential);
+    doCallRealMethod().when(mockAuthInterceptor).intercept(any(HttpRequest.class));
+
     RetryHttpInitializer initializer =
         new RetryHttpInitializer(
-            mockCredential,
+            mockAuthInterceptor,
             RetryHttpInitializerOptions.builder()
                 .setDefaultUserAgent("foo-user-agent")
                 .setHttpHeaders(ImmutableMap.of("header-key", "header=value"))
@@ -100,7 +108,7 @@ public class RetryHttpInitializerTest {
 
   @Test
   public void testConstructorNullCredential() {
-    new RetryHttpInitializer(/* credential= */ null, "foo-user-agent");
+    new RetryHttpInitializer(/* authenticationInterceptor= */ null, "foo-user-agent");
   }
 
   @Test
@@ -109,7 +117,7 @@ public class RetryHttpInitializerTest {
     final HttpRequest req = requestFactory.buildGetRequest(new GenericUrl("http://fake-url.com"));
     assertThat(req.getHeaders().getUserAgent()).isEqualTo("foo-user-agent");
     assertThat(req.getHeaders().get("header-key")).isEqualTo("header=value");
-    assertThat(req.getInterceptor()).isEqualTo(mockCredential);
+    assertThat(req.getInterceptor()).isEqualTo(mockAuthInterceptor);
     assertThat(((RetryHttpInitializer) requestFactory.getInitializer()).getCredential())
         .isEqualTo(mockCredential);
 
@@ -130,6 +138,7 @@ public class RetryHttpInitializerTest {
     HttpResponse res = req.execute();
     assertThat(res).isNotNull();
 
+    verify(mockAuthInterceptor).intercept(eq(req));
     verify(mockCredential).intercept(eq(req));
     verify(mockLowLevelRequest).addHeader(eq("Authorization"), eq(authHeaderValue));
     verify(mockLowLevelRequest).execute();
@@ -141,7 +150,7 @@ public class RetryHttpInitializerTest {
     final String authHeaderValue = "Bearer a1b2c3d4";
     final HttpRequest req = requestFactory.buildGetRequest(new GenericUrl("http://fake-url.com"));
     assertThat(req.getHeaders().getUserAgent()).isEqualTo("foo-user-agent");
-    assertThat(req.getInterceptor()).isEqualTo(mockCredential);
+    assertThat(req.getInterceptor()).isEqualTo(mockAuthInterceptor);
 
     // Simulate the actual behavior of inserting a header for the credential.
     doAnswer(
@@ -192,7 +201,7 @@ public class RetryHttpInitializerTest {
     final String authHeaderValue = "Bearer a1b2c3d4";
     final HttpRequest req = requestFactory.buildGetRequest(new GenericUrl("http://fake-url.com"));
     assertThat(req.getHeaders().getUserAgent()).isEqualTo("foo-user-agent");
-    assertThat(req.getInterceptor()).isEqualTo(mockCredential);
+    assertThat(req.getInterceptor()).isEqualTo(mockAuthInterceptor);
 
     // Simulate the actual behavior of inserting a header for the credential.
     doAnswer(
@@ -234,7 +243,7 @@ public class RetryHttpInitializerTest {
     final String authHeaderValue = "Bearer a1b2c3d4";
     final HttpRequest req = requestFactory.buildGetRequest(new GenericUrl("http://fake-url.com"));
     assertThat(req.getHeaders().getUserAgent()).isEqualTo("foo-user-agent");
-    assertThat(req.getInterceptor()).isEqualTo(mockCredential);
+    assertThat(req.getInterceptor()).isEqualTo(mockAuthInterceptor);
 
     // Simulate the actual behavior of inserting a header for the credential.
     doAnswer(

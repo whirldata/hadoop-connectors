@@ -59,11 +59,12 @@ import com.google.cloud.hadoop.gcsio.ListFileOptions;
 import com.google.cloud.hadoop.gcsio.StorageResourceId;
 import com.google.cloud.hadoop.gcsio.UpdatableItemInfo;
 import com.google.cloud.hadoop.gcsio.UriPaths;
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import com.google.cloud.hadoop.util.ApiErrorExtractor;
 import com.google.cloud.hadoop.util.CredentialFactory;
 import com.google.cloud.hadoop.util.CredentialFactory.CredentialHttpRetryInitializer;
-import com.google.cloud.hadoop.util.CredentialFromAccessTokenProviderClassFactory;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
+import com.google.cloud.hadoop.util.authentication.CredentialFromAccessTokenProviderClassFactory;
 import com.google.cloud.hadoop.util.GoogleCredentialWithIamAccessToken;
 import com.google.cloud.hadoop.util.HadoopCredentialConfiguration;
 import com.google.cloud.hadoop.util.HttpTransportFactory;
@@ -1287,6 +1288,32 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     return gcsFsSupplier.get();
   }
 
+  private AccessTokenProvider getAccessTokenProvider(Configuration config, List<String> keyPrefixes)
+      throws IOException {
+    AccessTokenProvider atp = null;
+    // Check if delegation token support is configured
+    if (delegationTokens != null) {
+      // If so, use the delegation token to acquire the Google credentials
+      atp = delegationTokens.getAccessTokenProvider();
+      atp.setConf(config);
+    } else {
+      Class<? extends AccessTokenProvider> clazz =
+          HadoopCredentialConfiguration.getAccessTokenProviderImplClass(
+              config, keyPrefixes.toArray(new String[0]));
+      if (clazz != null) {
+        logger.atFine().log("Using AccessTokenProvider (%s)", clazz.getName());
+        try {
+          atp = clazz.getDeclaredConstructor().newInstance();
+          atp.setConf(config);
+        } catch (ReflectiveOperationException ex) {
+          throw new IOException("Can't instantiate " + clazz.getName(), ex);
+        }
+      }
+    }
+
+    return atp;
+  }
+
   /**
    * Retrieve user's Credential. If user implemented {@link AccessTokenProvider} and provided the
    * class name (See {@link HadoopCredentialConfiguration#ACCESS_TOKEN_PROVIDER_IMPL_SUFFIX} then
@@ -1294,35 +1321,23 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
    * through {@link HadoopCredentialConfiguration#getCredentialFactory(Configuration, String...)}.
    */
   private Credential getCredential(
-      Configuration config, GoogleCloudStorageFileSystemOptions gcsFsOptions)
+      AccessTokenProvider atp, Configuration config, GoogleCloudStorageFileSystemOptions gcsFsOptions)
       throws IOException, GeneralSecurityException {
     Credential credential = null;
 
-    // Check if delegation token support is configured
-    if (delegationTokens != null) {
-      // If so, use the delegation token to acquire the Google credentials
-      AccessTokenProvider atp = delegationTokens.getAccessTokenProvider();
-      if (atp != null) {
-        atp.setConf(config);
-        credential =
-            CredentialFromAccessTokenProviderClassFactory.credential(
-                atp, CredentialFactory.DEFAULT_SCOPES);
-      }
-    } else {
-      // If delegation token support is not configured, check if a
-      // custom AccessTokenProvider implementation is configured, and attempt
-      // to acquire the Google credentials using it
+    // Get credentials from the AccessTokenProvider
+    if (atp != null) {
       credential =
           CredentialFromAccessTokenProviderClassFactory.credential(
-              config, ImmutableList.of(GCS_CONFIG_PREFIX), CredentialFactory.DEFAULT_SCOPES);
+              atp, CredentialFactory.DEFAULT_SCOPES, /*httpRequest*/ null);
+    }
 
-      if (credential == null) {
-        // Finally, if no credentials have been acquired at this point, employ
-        // the default mechanism.
-        credential =
-            HadoopCredentialConfiguration.getCredentialFactory(config, GCS_CONFIG_PREFIX)
-                .getCredential(CredentialFactory.DEFAULT_SCOPES);
-      }
+    if (credential == null) {
+      // Finally, if no credentials have been acquired at this point, employ
+      // the default mechanism.
+      credential =
+          HadoopCredentialConfiguration.getCredentialFactory(config, GCS_CONFIG_PREFIX)
+              .getCredential(CredentialFactory.DEFAULT_SCOPES);
     }
 
     // If impersonation service account exists, then use current credential to request access token
@@ -1454,14 +1469,20 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     GoogleCloudStorageFileSystemOptions gcsFsOptions =
         GoogleHadoopFileSystemConfiguration.getGcsFsOptionsBuilder(config).build();
 
+    AccessTokenProvider accessTokenProvider;
     Credential credential;
     try {
-      credential = getCredential(config, gcsFsOptions);
+      accessTokenProvider = getAccessTokenProvider(config, ImmutableList.of(GCS_CONFIG_PREFIX));
+      credential = getCredential(accessTokenProvider, config, gcsFsOptions);
     } catch (GeneralSecurityException e) {
       throw new RuntimeException(e);
     }
 
-    return new GoogleCloudStorageFileSystem(credential, gcsFsOptions);
+    AuthenticationInterceptor authenticationInterceptor = new AuthenticationInterceptor(credential,
+        accessTokenProvider,
+        HadoopCredentialConfiguration.shouldGenerateNewTokenOnHttpInit(config, GCS_CONFIG_PREFIX));
+
+    return new GoogleCloudStorageFileSystem(authenticationInterceptor, gcsFsOptions);
   }
 
   /**

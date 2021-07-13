@@ -74,6 +74,7 @@ import com.google.cloud.hadoop.gcsio.authorization.StorageRequestAuthorizer;
 import com.google.cloud.hadoop.util.ApiErrorExtractor;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions;
 import com.google.cloud.hadoop.util.RetryHttpInitializer;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.ErrorResponses;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -149,9 +150,11 @@ public class GoogleCloudStorageTest {
 
   @Before
   public void setUp() {
+    AuthenticationInterceptor authInterceptor = new AuthenticationInterceptor(
+        new MockGoogleCredential.Builder().build());
     trackingRequestInitializerWithRetries =
         new TrackingHttpRequestInitializer(
-            new RetryHttpInitializer(new MockGoogleCredential.Builder().build(), "gcs-io-unt-test"),
+            new RetryHttpInitializer(authInterceptor, "gcs-io-unt-test"),
             /* replaceRequestParams= */ false);
     trackingRequestInitializerWithoutRetries =
         new TrackingHttpRequestInitializer(/* replaceRequestParams= */ false);

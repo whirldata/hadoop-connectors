@@ -24,7 +24,7 @@ import static org.junit.Assert.assertThrows;
 import com.google.cloud.hadoop.fs.gcs.auth.GcsDelegationTokens;
 import com.google.cloud.hadoop.fs.gcs.auth.TestDelegationTokenBindingImpl;
 import com.google.cloud.hadoop.fs.gcs.auth.TestTokenIdentifierImpl;
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import java.io.IOException;
 import java.net.URI;
 import org.apache.hadoop.conf.Configuration;

@@ -14,7 +14,7 @@
 
 package com.google.cloud.hadoop.util;
 
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 

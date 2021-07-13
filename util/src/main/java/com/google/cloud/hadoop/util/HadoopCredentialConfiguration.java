@@ -15,6 +15,7 @@
 package com.google.cloud.hadoop.util;
 
 import com.google.cloud.hadoop.util.HttpTransportFactory.HttpTransportType;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
@@ -134,6 +135,9 @@ public class HadoopCredentialConfiguration {
       ACCESS_TOKEN_PROVIDER_IMPL_SUFFIX =
           new HadoopConfigurationProperty<>(".auth.access.token.provider.impl");
 
+  public static final HadoopConfigurationProperty<Boolean> GENERATE_NEW_TOKEN_ON_HTTP_INIT =
+      new HadoopConfigurationProperty<>(".auth.access.token.provider.new.token", false);
+
   /**
    * Key suffix specifying the impersonating service account with which to call GCS API to get
    * access token.
@@ -211,6 +215,13 @@ public class HadoopCredentialConfiguration {
     return ACCESS_TOKEN_PROVIDER_IMPL_SUFFIX
         .withPrefixes(getConfigKeyPrefixes(keyPrefixes))
         .get(config, (k, d) -> config.getClass(k, d, AccessTokenProvider.class));
+  }
+
+  public static Boolean shouldGenerateNewTokenOnHttpInit(
+      Configuration config, String... keyPrefixes) {
+    return GENERATE_NEW_TOKEN_ON_HTTP_INIT
+        .withPrefixes(getConfigKeyPrefixes(keyPrefixes))
+        .get(config, config::getBoolean);
   }
 
   /**

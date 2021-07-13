@@ -115,7 +115,6 @@
     <module>gcs/pom.xml</module>
     <module>gcsio/pom.xml</module>
     <module>util/pom.xml</module>
-    <module>util-hadoop/pom.xml</module>
     <module>coverage/pom.xml</module>
   </modules>
 

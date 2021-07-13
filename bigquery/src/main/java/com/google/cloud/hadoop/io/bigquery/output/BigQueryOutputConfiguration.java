@@ -25,7 +25,7 @@ import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.OUTPUT_T
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.OUTPUT_TABLE_SCHEMA;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.OUTPUT_TABLE_WRITE_DISPOSITION;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.PROJECT_ID;
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 
 import com.google.api.services.bigquery.model.TableReference;
 import com.google.api.services.bigquery.model.TableSchema;

@@ -25,7 +25,6 @@ import static com.google.cloud.hadoop.util.HadoopCredentialConfiguration.SERVICE
 import static com.google.cloud.hadoop.util.HadoopCredentialConfiguration.SERVICE_ACCOUNT_PRIVATE_KEY_SUFFIX;
 import static com.google.cloud.hadoop.util.HadoopCredentialConfiguration.TOKEN_SERVER_URL_SUFFIX;
 import static com.google.cloud.hadoop.util.HttpTransportFactory.HttpTransportType.JAVA_NET;
-import static com.google.cloud.hadoop.util.testing.HadoopConfigurationUtils.getDefaultProperties;
 import static com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.jsonDataResponse;
 import static com.google.cloud.hadoop.util.testing.MockHttpTransportHelper.mockTransport;
 import static com.google.common.truth.Truth.assertThat;
@@ -36,9 +35,11 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.auth.oauth2.TokenResponse;
 import com.google.api.client.testing.http.MockHttpTransport;
 import com.google.cloud.hadoop.util.CredentialFactory.GoogleCredentialWithRetry;
+import com.google.cloud.hadoop.util.testing.HadoopConfigurationUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
+import com.google.common.truth.Truth;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -57,6 +58,7 @@ public class HadoopCredentialConfigurationTest {
       new HashMap<String, Object>() {
         {
           put(".auth.access.token.provider.impl", null);
+          put(".auth.access.token.provider.new.token", false);
           put(".auth.null.enable", false);
           put(".auth.service.account.email", null);
           put(".service.account.auth.email", null);
@@ -217,7 +219,7 @@ public class HadoopCredentialConfigurationTest {
 
   @Test
   public void defaultPropertiesValues() {
-    assertThat(getDefaultProperties(HadoopCredentialConfiguration.class))
+    Truth.assertThat(HadoopConfigurationUtils.getDefaultProperties(HadoopCredentialConfiguration.class))
         .containsExactlyEntriesIn(expectedDefaultConfiguration);
   }
 

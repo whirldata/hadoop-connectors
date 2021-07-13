@@ -15,7 +15,7 @@ package com.google.cloud.hadoop.io.bigquery;
 
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.DELETE_EXPORT_FILES_FROM_GCS;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.TEMP_GCS_PATH;
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 
 import com.google.api.services.bigquery.model.Job;
 import com.google.api.services.bigquery.model.JobConfiguration;

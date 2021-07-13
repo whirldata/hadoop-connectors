@@ -19,7 +19,7 @@ package com.google.cloud.hadoop.fs.gcs.auth;
 import static java.util.Objects.requireNonNull;
 
 import com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemBase;
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import com.google.common.flogger.GoogleLogger;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

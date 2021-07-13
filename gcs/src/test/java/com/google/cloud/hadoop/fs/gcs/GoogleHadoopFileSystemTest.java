@@ -25,7 +25,7 @@ import static org.junit.Assert.assertThrows;
 
 import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.cloud.hadoop.gcsio.MethodOutcome;
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import com.google.cloud.hadoop.util.testing.TestingAccessTokenProvider;
 import java.io.FileNotFoundException;
 import java.io.IOException;

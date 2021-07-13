@@ -14,7 +14,7 @@
 
 package com.google.cloud.hadoop.util.testing;
 
-import com.google.cloud.hadoop.util.AccessTokenProvider;
+import com.google.cloud.hadoop.util.authentication.AccessTokenProvider;
 import org.apache.hadoop.conf.Configuration;
 
 /** A mock implementation of the {@link AccessTokenProvider} interface to be used in tests. */

@@ -13,7 +13,7 @@
  */
 package com.google.cloud.hadoop.io.bigquery;
 
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.api.services.bigquery.model.TableReference;

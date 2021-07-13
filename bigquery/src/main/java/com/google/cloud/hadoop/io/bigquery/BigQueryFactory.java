@@ -23,7 +23,8 @@ import com.google.api.client.json.JsonFactory;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.BigqueryScopes;
-import com.google.cloud.hadoop.util.CredentialFromAccessTokenProviderClassFactory;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
+import com.google.cloud.hadoop.util.authentication.CredentialFromAccessTokenProviderClassFactory;
 import com.google.cloud.hadoop.util.HadoopCredentialConfiguration;
 import com.google.cloud.hadoop.util.PropertyUtil;
 import com.google.cloud.hadoop.util.RetryHttpInitializer;
@@ -127,8 +128,11 @@ public class BigQueryFactory {
     logger.atInfo().log("Creating BigQuery from given credential.");
     // Use the credential to create an authorized BigQuery client
     if (credential != null) {
+      AuthenticationInterceptor authenticationInterceptor = new AuthenticationInterceptor(
+          credential);
       return new Bigquery
-          .Builder(HTTP_TRANSPORT, JSON_FACTORY, new RetryHttpInitializer(credential, appName))
+          .Builder(HTTP_TRANSPORT, JSON_FACTORY,
+          new RetryHttpInitializer(authenticationInterceptor, appName))
           .setApplicationName(appName).build();
     }
     return new Bigquery.Builder(HTTP_TRANSPORT, JSON_FACTORY, /* httpRequestInitializer= */ null)

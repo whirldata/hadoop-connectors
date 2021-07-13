@@ -101,11 +101,6 @@
     </dependency>
     <dependency>
       <groupId>com.google.cloud.bigdataoss</groupId>
-      <artifactId>util-hadoop</artifactId>
-      <version>${hadoop.identifier}-${bigdataoss.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.google.cloud.bigdataoss</groupId>
       <artifactId>gcsio</artifactId>
       <version>${bigdataoss.version}</version>
     </dependency>
@@ -296,8 +291,8 @@
                   </includes>
                   <excludes>
                     <exclude>com.google.cloud.hadoop.gcsio.authorization.AuthorizationHandler</exclude>
-                    <exclude>com.google.cloud.hadoop.util.AccessTokenProvider</exclude>
-                    <exclude>com.google.cloud.hadoop.util.AccessTokenProvider$AccessToken</exclude>
+                    <exclude>com.google.cloud.hadoop.util.authentication.AccessTokenProvider</exclude>
+                    <exclude>com.google.cloud.hadoop.util.authentication.AccessTokenProvider$AccessToken</exclude>
                   </excludes>
                 </relocation>
                 <relocation>

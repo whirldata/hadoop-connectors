@@ -26,14 +26,14 @@ import javax.annotation.Nullable;
 @AutoValue
 public abstract class CredentialOptions {
 
-  static final boolean SERVICE_ACCOUNT_ENABLED_DEFAULT = true;
+  public static final boolean SERVICE_ACCOUNT_ENABLED_DEFAULT = true;
 
-  static final boolean NULL_CREDENTIALS_ENABLED_DEFAULT = false;
+  public static final boolean NULL_CREDENTIALS_ENABLED_DEFAULT = false;
 
-  static final HttpTransportType HTTP_TRANSPORT_TYPE_DEFAULT =
+  public static final HttpTransportType HTTP_TRANSPORT_TYPE_DEFAULT =
       HttpTransportFactory.DEFAULT_TRANSPORT_TYPE;
 
-  static final String TOKEN_SERVER_URL_DEFAULT = GoogleOAuthConstants.TOKEN_SERVER_URL;
+  public static final String TOKEN_SERVER_URL_DEFAULT = GoogleOAuthConstants.TOKEN_SERVER_URL;
 
   public static Builder builder() {
     return new AutoValue_CredentialOptions.Builder()

@@ -40,6 +40,7 @@ import com.google.cloud.hadoop.gcsio.cooplock.DeleteOperation;
 import com.google.cloud.hadoop.gcsio.cooplock.RenameOperation;
 import com.google.cloud.hadoop.gcsio.integration.GoogleCloudStorageTestHelper;
 import com.google.cloud.hadoop.util.RetryHttpInitializer;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.net.URI;
@@ -73,16 +74,16 @@ public class CoopLockIntegrationTest {
 
   @BeforeClass
   public static void before() throws Throwable {
-    Credential credential =
-        checkNotNull(GoogleCloudStorageTestHelper.getCredential(), "credential must not be null");
+    AuthenticationInterceptor authInterceptor =
+        checkNotNull(GoogleCloudStorageTestHelper.getAuthenticationInterceptor(), "Authentication Interceptor must not be null");
 
     gcsOptions = getStandardOptionBuilder().build();
     httpRequestInitializer =
-        new RetryHttpInitializer(credential, gcsOptions.toRetryHttpInitializerOptions());
+        new RetryHttpInitializer(authInterceptor, gcsOptions.toRetryHttpInitializerOptions());
 
     GoogleCloudStorageFileSystem gcsfs =
         new GoogleCloudStorageFileSystem(
-            credential,
+            authInterceptor,
             GoogleCloudStorageFileSystemOptions.builder()
                 .setBucketDeleteEnabled(true)
                 .setCloudStorageOptions(gcsOptions)

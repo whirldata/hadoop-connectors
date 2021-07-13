@@ -17,7 +17,7 @@ import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.DYNAMIC_
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.DYNAMIC_FILE_LIST_RECORD_READER_POLL_MAX_ATTEMPTS;
 
 import com.google.api.client.util.Sleeper;
-import com.google.cloud.hadoop.util.HadoopToStringUtil;
+import com.google.cloud.hadoop.util.authentication.HadoopToStringUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.GoogleLogger;

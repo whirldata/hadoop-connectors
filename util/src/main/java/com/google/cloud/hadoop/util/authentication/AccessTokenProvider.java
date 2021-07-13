@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Google Inc. All Rights Reserved.
+ * Copyright 2021 Google Inc. All Rights Reserved.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,8 +12,9 @@
  * limitations under the License.
  */
 
-package com.google.cloud.hadoop.util;
+package com.google.cloud.hadoop.util.authentication;
 
+import com.google.api.client.http.HttpRequest;
 import java.io.IOException;
 import org.apache.hadoop.conf.Configurable;
 
@@ -45,10 +46,24 @@ public interface AccessTokenProvider extends Configurable {
   /** @return an access token. */
   AccessToken getAccessToken();
 
+  /** @return an access token. */
+  default AccessToken getAccessToken(HttpRequest httpRequest) {
+    return this.getAccessToken();
+  }
+
   /**
    * Force this provider to refresh its access token.
    *
    * @throws IOException when refresh fails.
    */
   void refresh() throws IOException;
+
+  /**
+   * Force this provider to refresh its access token.
+   *
+   * @throws IOException when refresh fails.
+   */
+  default void refresh(HttpRequest httpRequest) throws IOException {
+    this.refresh();
+  }
 }

@@ -19,13 +19,13 @@ import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.INPUT_TA
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.MANDATORY_CONFIG_PROPERTIES_INPUT;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.PROJECT_ID;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.TEMP_GCS_PATH;
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 import static com.google.common.flogger.LazyArgs.lazy;
 
 import com.google.api.services.bigquery.Bigquery;
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableReference;
-import com.google.cloud.hadoop.util.HadoopToStringUtil;
+import com.google.cloud.hadoop.util.authentication.HadoopToStringUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.GoogleLogger;

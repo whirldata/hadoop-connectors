@@ -35,6 +35,7 @@ import com.google.cloud.hadoop.util.CheckedFunction;
 import com.google.cloud.hadoop.util.CredentialFactory;
 import com.google.cloud.hadoop.util.CredentialOptions;
 import com.google.cloud.hadoop.util.RetryHttpInitializer;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Lists;
 import com.google.common.flogger.GoogleLogger;
@@ -82,6 +83,10 @@ public class GoogleCloudStorageTestHelper {
     } catch (GeneralSecurityException e) {
       throw new IOException("Failed to create test credentials", e);
     }
+  }
+
+  public static AuthenticationInterceptor getAuthenticationInterceptor() throws IOException {
+    return new AuthenticationInterceptor(getCredential(), null, false);
   }
 
   public static GoogleCloudStorageOptions.Builder getStandardOptionBuilder() {
@@ -329,7 +334,7 @@ public class GoogleCloudStorageTestHelper {
       this.requestsTracker =
           new TrackingHttpRequestInitializer(
               new RetryHttpInitializer(
-                  GoogleCloudStorageTestHelper.getCredential(),
+                  GoogleCloudStorageTestHelper.getAuthenticationInterceptor(),
                   options.toRetryHttpInitializerOptions()));
       this.delegate = delegateStorageFn.apply(this.requestsTracker);
     }

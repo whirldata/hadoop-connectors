@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.google.cloud.hadoop.util;
+package com.google.cloud.hadoop.util.authentication;
 
+import com.google.cloud.hadoop.util.HadoopConfigurationProperty;
 import com.google.common.base.Joiner;
 import com.google.common.base.Strings;
 import java.io.IOException;

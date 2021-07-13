@@ -21,7 +21,7 @@ import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.PROJECT_
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.SELECTED_FIELDS;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.SKEW_LIMIT;
 import static com.google.cloud.hadoop.io.bigquery.BigQueryConfiguration.SQL_FILTER;
-import static com.google.cloud.hadoop.util.ConfigurationUtil.getMandatoryConfig;
+import static com.google.cloud.hadoop.util.authentication.ConfigurationUtil.getMandatoryConfig;
 
 import com.google.api.services.bigquery.model.Table;
 import com.google.api.services.bigquery.model.TableReference;

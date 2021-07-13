@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-package com.google.cloud.hadoop.util;
+package com.google.cloud.hadoop.util.authentication;
 
 import java.io.IOException;
 import java.util.Arrays;

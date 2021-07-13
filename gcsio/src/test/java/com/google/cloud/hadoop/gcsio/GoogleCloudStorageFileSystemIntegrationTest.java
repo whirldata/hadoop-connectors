@@ -26,6 +26,7 @@ import com.google.cloud.hadoop.gcsio.GoogleCloudStorageReadOptions.Fadvise;
 import com.google.cloud.hadoop.gcsio.integration.GoogleCloudStorageTestHelper;
 import com.google.cloud.hadoop.gcsio.testing.TestConfiguration;
 import com.google.cloud.hadoop.util.AsyncWriteChannelOptions;
+import com.google.cloud.hadoop.util.authentication.AuthenticationInterceptor;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -116,7 +117,7 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
         @Override
         public void before() throws Throwable {
           if (gcsfs == null) {
-            Credential credential = GoogleCloudStorageTestHelper.getCredential();
+            AuthenticationInterceptor authInterceptor = GoogleCloudStorageTestHelper.getAuthenticationInterceptor();
             String projectId = checkNotNull(TestConfiguration.getInstance().getProjectId());
 
             GoogleCloudStorageFileSystemOptions.Builder optionsBuilder =
@@ -135,7 +136,7 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
                                 .build())
                         .build());
 
-            gcsfs = new GoogleCloudStorageFileSystem(credential, optionsBuilder.build());
+            gcsfs = new GoogleCloudStorageFileSystem(authInterceptor, optionsBuilder.build());
 
             gcs = gcsfs.getGcs();
 
