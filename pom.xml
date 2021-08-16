@@ -101,7 +101,7 @@
     <google.protobuf.version>3.17.3</google.protobuf.version>
     <grpc.version>1.39.0</grpc.version>
     <hadoop.two.version>2.10.1</hadoop.two.version>
-    <hadoop.three.version>3.2.2</hadoop.three.version>
+    <hadoop.three.version>3.3.1</hadoop.three.version>
 
     <!-- Test dependencies -->
     <google.truth.version>1.1.3</google.truth.version>
@@ -122,38 +122,38 @@
   </modules>
 
   <profiles>
-    <profile>
-      <id>hadoop2</id>
-      <properties>
-        <hadoop.identifier>hadoop2</hadoop.identifier>
-        <hadoop.version>${hadoop.two.version}</hadoop.version>
-      </properties>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <dependencyManagement>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>provided</scope>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-annotations</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>provided</scope>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>provided</scope>
-          </dependency>
-        </dependencies>
-      </dependencyManagement>
-    </profile>
+<!--    <profile>-->
+<!--      <id>hadoop2</id>-->
+<!--      <properties>-->
+<!--        <hadoop.identifier>hadoop2</hadoop.identifier>-->
+<!--        <hadoop.version>${hadoop.two.version}</hadoop.version>-->
+<!--      </properties>-->
+<!--      <activation>-->
+<!--        <activeByDefault>true</activeByDefault>-->
+<!--      </activation>-->
+<!--      <dependencyManagement>-->
+<!--        <dependencies>-->
+<!--          <dependency>-->
+<!--            <groupId>org.apache.hadoop</groupId>-->
+<!--            <artifactId>hadoop-common</artifactId>-->
+<!--            <version>${hadoop.version}</version>-->
+<!--            <scope>provided</scope>-->
+<!--          </dependency>-->
+<!--          <dependency>-->
+<!--            <groupId>org.apache.hadoop</groupId>-->
+<!--            <artifactId>hadoop-annotations</artifactId>-->
+<!--            <version>${hadoop.version}</version>-->
+<!--            <scope>provided</scope>-->
+<!--          </dependency>-->
+<!--          <dependency>-->
+<!--            <groupId>org.apache.hadoop</groupId>-->
+<!--            <artifactId>hadoop-mapreduce-client-core</artifactId>-->
+<!--            <version>${hadoop.version}</version>-->
+<!--            <scope>provided</scope>-->
+<!--          </dependency>-->
+<!--        </dependencies>-->
+<!--      </dependencyManagement>-->
+<!--    </profile>-->
 
     <profile>
       <id>hadoop3</id>
@@ -161,6 +161,9 @@
         <hadoop.identifier>hadoop3</hadoop.identifier>
         <hadoop.version>${hadoop.three.version}</hadoop.version>
       </properties>
+      <activation>
+      <activeByDefault>true</activeByDefault>
+      </activation>
       <dependencyManagement>
         <dependencies>
           <dependency>
