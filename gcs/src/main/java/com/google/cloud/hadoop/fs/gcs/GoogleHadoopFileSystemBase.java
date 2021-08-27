@@ -16,6 +16,7 @@
 
 package com.google.cloud.hadoop.fs.gcs;
 
+import static com.google.cloud.hadoop.fs.gcs.GHFSStatistic.INVOCATION_OPEN;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemBase.OutputStreamType.FLUSHABLE_COMPOSITE;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.BLOCK_SIZE;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.CONFIG_KEY_PREFIXES;
@@ -132,6 +133,8 @@ import org.apache.hadoop.fs.XAttrSetFlag;
 //Bhagyaa-s
 import org.apache.hadoop.fs.impl.OpenFileParameters;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.fs.statistics.IOStatisticsSource;
+import org.apache.hadoop.fs.statistics.IOStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
@@ -141,6 +144,8 @@ import org.apache.hadoop.util.BlockingThreadPoolExecutorService;
 import org.apache.hadoop.util.LambdaUtils;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 //Bhagyaa-e
+
+import com.google.cloud.hadoop.fs.gcs.GHFSStatistic;
 
 /**
  * This class provides a Hadoop compatible File System on top of Google Cloud Storage (GCS).
@@ -166,7 +171,7 @@ import com.google.common.util.concurrent.ForwardingExecutorService;
  * throw or to return false.
  */
 public abstract class GoogleHadoopFileSystemBase extends FileSystem
-    implements FileSystemDescriptor {
+    implements FileSystemDescriptor, IOStatisticsSource {
 
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
@@ -301,6 +306,9 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
   private ThreadPoolExecutor unboundedThreadPool;
   private GoogleCloudStorageItemInfo itemInfo;
   //Bhagyaa-e
+
+
+  public static GHFSInstrumentation instrumentation;
   /**
    * GCS {@link FileChecksum} which takes constructor parameters to define the return values of the
    * various abstract methods of {@link FileChecksum}.
@@ -492,6 +500,9 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     //Bhagyaa-s
     initThreadPools(config);
     //Bhagyaa-e
+
+    instrumentation = new GHFSInstrumentation(path);
+
     configure(config);
   }
 
@@ -589,7 +600,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
         getGcsFs().getOptions().getCloudStorageOptions().getReadChannelOptions();
     GoogleHadoopFSInputStream in =
         new GoogleHadoopFSInputStream(this, gcsPath, readChannelOptions, statistics);
-
+    entryPoint(INVOCATION_OPEN);
     return new FSDataInputStream(in);
   }
   /**Bhagyaa-s**/
@@ -726,6 +737,8 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
                 "Unsupported output stream type given for key '%s': '%s'",
                 GCS_OUTPUT_STREAM_TYPE.getKey(), type));
     }
+
+    instrumentation.fileCreated();
 
     return new FSDataOutputStream(out, /* stats= */ null);
   }
@@ -908,6 +921,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
       return false;
     }
     logger.atFiner().log("delete(hadoopPath: %s, recursive: %b): true", hadoopPath, recursive);
+    instrumentation.fileDeleted(1);
     return true;
   }
 
@@ -1932,6 +1946,46 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
             xAttrToRemove);
     getGcsFs().getGcs().updateItems(ImmutableList.of(updateInfo));
   }
+  /**
+   * Get the instrumentation's IOStatistics.
+   * @return statistics
+   */
+  @Override
+  public IOStatistics getIOStatistics() {
+    return instrumentation != null
+            ? instrumentation.getIOStatistics()
+            : null;
+  }
+
+
+  /**
+   * Entry point to an operation.
+   * Increments the statistic; verifies the FS is active.
+   * @param operation The operation to increment
+   * @throws IOException if the
+   */
+  protected void entryPoint(GHFSStatistic operation) throws IOException {
+    checkOpen();
+   // incrementStatistic(operation);
+  }
+  /**
+   * Increment a statistic by 1.
+   * This increments both the  and storage statistics.
+   * @param statistic The operation to increment
+   */
+  protected void incrementStatistic(GHFSStatistic statistic) {
+    incrementStatistic(statistic, 1);
+  }
+  /**
+   * Increment a statistic by a specific value.
+   * This increments both the instrumentation and storage statistics.
+   * @param statistic The operation to increment
+   * @param count the count to increment
+   */
+  protected void incrementStatistic(GHFSStatistic statistic, long count) {
+ //   statisticsContext.incrementCounter(statistic, count);
+  }
+
 
   private boolean isXAttr(String key) {
     return key != null && key.startsWith(XATTR_KEY_PREFIX);
