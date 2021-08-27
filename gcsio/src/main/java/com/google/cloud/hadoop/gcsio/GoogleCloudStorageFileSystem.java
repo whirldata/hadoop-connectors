@@ -1019,6 +1019,8 @@ public class GoogleCloudStorageFileSystem {
    * @return Information about a file or children of a directory.
    * @throws FileNotFoundException if the given path does not exist.
    */
+
+
   public List<FileInfo> listFileInfo(URI path, ListFileOptions listOptions) throws IOException {
     Preconditions.checkNotNull(path, "path can not be null");
     logger.atFiner().log("listFileInfo(path: %s)", path);
@@ -1026,7 +1028,6 @@ public class GoogleCloudStorageFileSystem {
     StorageResourceId pathId =
         StorageResourceId.fromUriPath(path, /* allowEmptyObjectName= */ true);
     StorageResourceId dirId = pathId.toDirectoryId();
-
     Future<List<GoogleCloudStorageItemInfo>> dirItemInfosFuture =
         (options.isStatusParallelEnabled() ? cachedExecutor : lazyExecutor)
             .submit(

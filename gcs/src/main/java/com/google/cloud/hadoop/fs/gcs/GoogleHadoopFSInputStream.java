@@ -50,6 +50,7 @@ class GoogleHadoopFSInputStream extends FSInputStream {
   private final byte[] singleReadBuf = new byte[1];
 
   private GoogleCloudStorageItemInfo itemInfo;
+  private final GHFSInputStreamStatistics streamStatistics;
 
   /**
    * Constructs an instance of GoogleHadoopFSInputStream object.
@@ -71,6 +72,7 @@ class GoogleHadoopFSInputStream extends FSInputStream {
     this.statistics = statistics;
     this.totalBytesRead = 0;
     this.channel = ghfs.getGcsFs().open(gcsPath, readOptions);
+    this.streamStatistics = ghfs.getInstrumentation().newInputStreamStatistics(statistics);
   }
 
   GoogleHadoopFSInputStream(
@@ -221,6 +223,7 @@ class GoogleHadoopFSInputStream extends FSInputStream {
     if (channel != null) {
       logger.atFiner().log("Closing '%s' file with %d total bytes read", gcsPath, totalBytesRead);
       channel.close();
+      streamStatistics.close();
     }
   }
 
