@@ -89,6 +89,7 @@ class GoogleHadoopFSInputStream extends FSInputStream {
     this.totalBytesRead = 0;
     this.itemInfo = itemInfo;
     this.channel = ghfs.getGcsFs().open(itemInfo, readOptions);
+    this.streamStatistics = ghfs.getInstrumentation().newInputStreamStatistics(statistics);
   }
 
   /**
