@@ -316,7 +316,7 @@ public interface GoogleCloudStorage {
    */
   GoogleCloudStorageItemInfo getItemInfo(StorageResourceId resourceId)
       throws IOException;
-
+  public long getStatistics(GoogleCloudStorageStatistics Key);
   /**
    * Gets information about multiple objects and/or buckets. Items that are "not found" will still
    * have an entry in the returned list; exists() will return false for these entries. The return

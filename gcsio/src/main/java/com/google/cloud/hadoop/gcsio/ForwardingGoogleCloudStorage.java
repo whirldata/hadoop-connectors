@@ -57,6 +57,11 @@ public class ForwardingGoogleCloudStorage implements GoogleCloudStorage {
   }
 
   @Override
+  public long getStatistics(GoogleCloudStorageStatistics key){
+    return 0;
+  }
+
+  @Override
   public void createBucket(String bucketName, CreateBucketOptions options) throws IOException {
     logger.atFiner().log("%s.createBucket(%s, %s)", delegateClassName, bucketName, options);
     delegate.createBucket(bucketName, options);
