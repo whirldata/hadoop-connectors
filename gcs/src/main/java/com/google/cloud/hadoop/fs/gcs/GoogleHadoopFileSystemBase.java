@@ -49,21 +49,8 @@ import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.api.client.http.HttpTransport;
 import com.google.cloud.hadoop.fs.gcs.auth.GcsDelegationTokens;
-import com.google.cloud.hadoop.gcsio.CreateFileOptions;
-import com.google.cloud.hadoop.gcsio.CreateObjectOptions;
-import com.google.cloud.hadoop.gcsio.FileInfo;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorage;
+import com.google.cloud.hadoop.gcsio.*;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorage.ListPage;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystem;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystemOptions;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorageItemInfo;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorageOptions;
-import com.google.cloud.hadoop.gcsio.GoogleCloudStorageReadOptions;
-import com.google.cloud.hadoop.gcsio.ListFileOptions;
-import com.google.cloud.hadoop.gcsio.StorageResourceId;
-import com.google.cloud.hadoop.gcsio.UpdatableItemInfo;
-import com.google.cloud.hadoop.gcsio.UriPaths;
-import com.google.cloud.hadoop.gcsio.TrackingHttpRequestInitializerFromGcsio;
 import com.google.cloud.hadoop.util.AccessTokenProvider;
 import com.google.cloud.hadoop.util.AccessTokenProvider.AccessTokenType;
 import com.google.cloud.hadoop.util.ApiErrorExtractor;
@@ -133,12 +120,14 @@ import org.apache.hadoop.fs.XAttrSetFlag;
 //Bhagyaa-s
 import org.apache.hadoop.fs.impl.OpenFileParameters;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.fs.statistics.DurationTracker;
 import org.apache.hadoop.fs.statistics.IOStatisticsSource;
 import org.apache.hadoop.fs.statistics.IOStatistics;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.Progressable;
+import org.apache.hadoop.fs.statistics.DurationTrackerFactory;
 //Bhagyaa-s
 import org.apache.hadoop.util.BlockingThreadPoolExecutorService;
 import org.apache.hadoop.util.LambdaUtils;
@@ -176,6 +165,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
 
   static final String SCHEME = GoogleCloudStorageFileSystem.SCHEME;
+  private static GHFSInputStreamStatistics streamStatistics;
 
   // Request only object fields that are used in Hadoop FileStatus:
   // https://cloud.google.com/storage/docs/json_api/v1/objects#resource-representations
@@ -502,6 +492,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     //Bhagyaa-e
 
     instrumentation = new GHFSInstrumentation(path);
+    streamStatistics = instrumentation.newInputStreamStatistics(this.statistics);
 
     configure(config);
   }
@@ -635,7 +626,14 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     Set<String> mandatoryKeys=parameters.getMandatoryKeys();
     AbstractFSBuilderImpl.rejectUnknownMandatoryKeys(mandatoryKeys,Collections.emptySet(),"for "+path);
     StorageResourceId storageResourceId = StorageResourceId.fromUriPath(rawPath.toUri(),false);
-    itemInfo = this.getGcsFs().getGcs().getItemInfo(storageResourceId);
+    DurationTracker tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    try{
+      itemInfo = this.getGcsFs().getGcs().getItemInfo(storageResourceId);
+    }catch(Exception e){
+           tracker.failed();
+    }finally{
+      tracker.close();
+    }
     LOG.debug("Ignoring file status");
     CompletableFuture<FSDataInputStream> result=new CompletableFuture<>();
     unboundedThreadPool.submit(()->LambdaUtils.eval(result,()->open(itemInfo,path,parameters.getBufferSize())));
@@ -1996,6 +1994,14 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
   public void entryPoint(GHFSStatistic operation) throws IOException {
     checkOpen();
     incrementStatistic(operation);
+  }
+
+  /**
+   * Get the factory for duration tracking.
+   * @return a factory from the instrumentation
+   */
+  protected DurationTrackerFactory getDurationTrackerFactory(){
+    return instrumentation != null ? instrumentation.getDurationTrackerFactory() : null;
   }
   /**
    * Increment a statistic by 1.

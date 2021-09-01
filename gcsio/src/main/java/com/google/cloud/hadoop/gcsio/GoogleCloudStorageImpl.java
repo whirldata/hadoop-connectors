@@ -2019,10 +2019,23 @@ public class GoogleCloudStorageImpl implements GoogleCloudStorage {
       return getBucket.execute();
     } catch (IOException e) {
       if (errorExtractor.itemNotFound(e)) {
+        if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) != null){
+          gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES)+1L);
+        }
+        else{
+          gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES,1L);
+        }
         logger.atFiner().withCause(e).log("getBucket(%s): not found", bucketName);
         return null;
       }
       throw new IOException("Error accessing Bucket " + bucketName, e);
+    }finally {
+      if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) != null){
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST)+1L);
+      }
+      else{
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST,1L);
+      }
     }
   }
 

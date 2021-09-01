@@ -433,7 +433,6 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
     }
     @Override
     public void getMetrics(MetricsCollector metricsCollector, boolean b) {
-//        System.out.println("getMetrics");
     }
 
 
@@ -749,7 +748,6 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
          */
         @Override
         public void close() {
-            System.out.println("Close in GHFSInstrumentation is called");
             increment(StreamStatisticNames.STREAM_READ_CLOSE_OPERATIONS);
             merge(true);
         }
