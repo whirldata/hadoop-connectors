@@ -782,12 +782,28 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
 
     URI gcsPath = getGcsPath(checkNotNull(hadoopPath, "hadoopPath must not be null"));
     URI parentGcsPath = UriPaths.getParentPath(gcsPath);
-    if (!getGcsFs().getFileInfo(parentGcsPath).exists()) {
-      throw new FileNotFoundException(
-          String.format(
-              "Can not create '%s' file, because parent folder does not exist: %s",
-              gcsPath, parentGcsPath));
-    }
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+      if (!getGcsFs().getFileInfo(parentGcsPath).exists()) {
+        throw new FileNotFoundException(
+                String.format(
+                        "Can not create '%s' file, because parent folder does not exist: %s",
+                        gcsPath, parentGcsPath));
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
     return create(
         hadoopPath,
         permission,
@@ -1115,14 +1131,30 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
 
     checkOpen();
-
+    FileInfo fileInfo ;
     URI gcsPath = getGcsPath(hadoopPath);
-    FileInfo fileInfo = getGcsFs().getFileInfo(gcsPath);
-    if (!fileInfo.exists()) {
-      throw new FileNotFoundException(
-          String.format(
-              "%s not found: %s", fileInfo.isDirectory() ? "Directory" : "File", hadoopPath));
-    }
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+      fileInfo = getGcsFs().getFileInfo(gcsPath);
+      if (!fileInfo.exists()) {
+        throw new FileNotFoundException(
+                String.format(
+                        "%s not found: %s", fileInfo.isDirectory() ? "Directory" : "File", hadoopPath));
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
     String userName = getUgiUserName();
     entryPoint(GHFSStatistic.INVOCATION_GET_FILE_STATUS);
     return getFileStatus(fileInfo, userName);
@@ -1854,13 +1886,36 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     checkArgument(hadoopPath != null, "hadoopPath must not be null");
 
     checkOpen();
+    final FileInfo fileInfo;
     entryPoint(GHFSStatistic.INVOCATION_GET_FILE_CHECKSUM);
     URI gcsPath = getGcsPath(hadoopPath);
-    final FileInfo fileInfo = getGcsFs().getFileInfo(gcsPath);
-    if (!fileInfo.exists()) {
-      throw new FileNotFoundException(
-          String.format(
-              "%s not found: %s", fileInfo.isDirectory() ? "Directory" : "File", hadoopPath));
+
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    try{
+      fileInfo = getGcsFs().getFileInfo(gcsPath);
+      if (!fileInfo.exists()) {
+        throw new FileNotFoundException(
+                String.format(
+                        "%s not found: %s", fileInfo.isDirectory() ? "Directory" : "File", hadoopPath));
+      }
+    }catch(Exception e){
+      throw  e;
+    }finally {
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
     }
     FileChecksum checksum = getFileChecksum(checksumType, fileInfo);
     logger.atFiner().log(
@@ -1911,11 +1966,34 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     checkNotNull(path, "path should not be null");
     checkNotNull(name, "name should not be null");
 
-    Map<String, byte[]> attributes = getGcsFs().getFileInfo(getGcsPath(path)).getAttributes();
-    String xAttrKey = getXAttrKey(name);
-    byte[] xAttr =
-        attributes.containsKey(xAttrKey) ? getXAttrValue(attributes.get(xAttrKey)) : null;
-
+    Map<String, byte[]> attributes;
+    String xAttrKey;
+    byte[] xAttr;
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    try{
+      attributes = getGcsFs().getFileInfo(getGcsPath(path)).getAttributes();
+      xAttrKey = getXAttrKey(name);
+      xAttr =
+              attributes.containsKey(xAttrKey) ? getXAttrValue(attributes.get(xAttrKey)) : null;
+    }catch(Exception e){
+      throw  e;
+    }finally {
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
+    }
     logger.atFiner().log(
         "getXAttr(path: %s, name: %s): %s", path, name, lazy(() -> new String(xAttr, UTF_8)));
     return xAttr;
@@ -1925,16 +2003,37 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
   @Override
   public Map<String, byte[]> getXAttrs(Path path) throws IOException {
     checkNotNull(path, "path should not be null");
+    Map<String, byte[]> xAttrs;
 
-    FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
-    Map<String, byte[]> xAttrs =
-        fileInfo.getAttributes().entrySet().stream()
-            .filter(a -> isXAttr(a.getKey()))
-            .collect(
-                HashMap::new,
-                (m, a) -> m.put(getXAttrName(a.getKey()), getXAttrValue(a.getValue())),
-                Map::putAll);
-
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    try{
+      FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
+      xAttrs =
+              fileInfo.getAttributes().entrySet().stream()
+                      .filter(a -> isXAttr(a.getKey()))
+                      .collect(
+                              HashMap::new,
+                              (m, a) -> m.put(getXAttrName(a.getKey()), getXAttrValue(a.getValue())),
+                              Map::putAll);
+    }catch(Exception e){
+      throw  e;
+    }finally {
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
+    }
     logger.atFiner().log("getXAttrs(path: %s): %s", path, xAttrs);
     return xAttrs;
   }
@@ -1965,14 +2064,35 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
   public List<String> listXAttrs(Path path) throws IOException {
     checkNotNull(path, "path should not be null");
 
-    FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
+    List<String> xAttrs;
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    try{
+      FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
 
-    List<String> xAttrs =
-        fileInfo.getAttributes().keySet().stream()
-            .filter(this::isXAttr)
-            .map(this::getXAttrName)
-            .collect(Collectors.toCollection(ArrayList::new));
-
+      xAttrs =
+              fileInfo.getAttributes().keySet().stream()
+                      .filter(this::isXAttr)
+                      .map(this::getXAttrName)
+                      .collect(Collectors.toCollection(ArrayList::new));
+    }catch(Exception e){
+      throw  e;
+    }finally {
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
+    }
     logger.atFiner().log("listXAttrs(path: %s): %s", path, xAttrs);
     return xAttrs;
   }
@@ -2019,14 +2139,42 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     checkNotNull(path, "path should not be null");
     checkNotNull(name, "name should not be null");
 
-    FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
-    Map<String, byte[]> xAttrToRemove = new HashMap<>();
-    xAttrToRemove.put(getXAttrKey(name), null);
-    UpdatableItemInfo updateInfo =
-        new UpdatableItemInfo(
-            StorageResourceId.fromUriPath(fileInfo.getPath(), /* allowEmptyObjectName= */ false),
-            xAttrToRemove);
-    getGcsFs().getGcs().updateItems(ImmutableList.of(updateInfo));
+    DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+
+    try {
+      FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
+      Map<String, byte[]> xAttrToRemove = new HashMap<>();
+      xAttrToRemove.put(getXAttrKey(name), null);
+      UpdatableItemInfo updateInfo =
+              new UpdatableItemInfo(
+                      StorageResourceId.fromUriPath(fileInfo.getPath(), /* allowEmptyObjectName= */ false),
+                      xAttrToRemove);
+      getGcsFs().getGcs().updateItems(ImmutableList.of(updateInfo));
+    } catch (DirectoryNotEmptyException e) {
+      throw e;
+    } catch (IOException e) {
+      if (ApiErrorExtractor.INSTANCE.requestFailure(e)) {
+        throw e;
+      }
+
+    }
+    finally {
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
+    }
   }
   /**
    * Get the instrumentation's IOStatistics.
