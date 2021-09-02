@@ -2030,6 +2030,9 @@ public class GoogleCloudStorageImpl implements GoogleCloudStorage {
       }
       throw new IOException("Error accessing Bucket " + bucketName, e);
     }finally {
+      if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) == null){
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES,0L);
+      }
       if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) != null){
         gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST)+1L);
       }
@@ -2092,18 +2095,35 @@ public class GoogleCloudStorageImpl implements GoogleCloudStorage {
         else{
           gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES,1L);
         }
-
+        if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) != null){
+          gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES)+1L);
+        }
+        else{
+          gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES,1L);
+        }
         logger.atFiner().withCause(e).log("getObject(%s): not found", resourceId);
 
         return null;
       }
       throw new IOException("Error accessing " + resourceId, e);
     }finally {
+      if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) == null){
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES,0L);
+      }
+      if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) == null){
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES,0L);
+      }
       if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) != null){
         gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST)+1L);
       }
       else{
         gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST,1L);
+      }
+      if(gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) != null){
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST,gcsStatisticsMap.get(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST)+1L);
+      }
+      else{
+        gcsStatisticsMap.put(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST,1L);
       }
     }
   }

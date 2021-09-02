@@ -19,6 +19,7 @@ package com.google.cloud.hadoop.fs.gcs;
 import com.google.cloud.hadoop.gcsio.CreateFileOptions;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystem;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageOptions;
+import com.google.cloud.hadoop.gcsio.GoogleCloudStorageStatistics;
 import com.google.common.flogger.GoogleLogger;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -29,6 +30,8 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.WritableByteChannel;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.statistics.DurationTracker;
+import org.apache.hadoop.fs.statistics.DurationTrackerFactory;
 
 /** A buffered output stream that allows writing to a GCS object. */
 class GoogleHadoopOutputStream extends OutputStream {
@@ -47,6 +50,8 @@ class GoogleHadoopOutputStream extends OutputStream {
   // Statistics tracker provided by the parent GoogleHadoopFileSystemBase for recording
   // numbers of bytes written.
   private final FileSystem.Statistics statistics;
+
+  private GHFSInstrumentation instrumentation;
 
   /**
    * Constructs an instance of GoogleHadoopOutputStream object.
@@ -67,19 +72,54 @@ class GoogleHadoopOutputStream extends OutputStream {
     this.gcsPath = gcsPath;
     this.statistics = statistics;
     GoogleCloudStorageFileSystem gcsfs = ghfs.getGcsFs();
-    this.channel = createChannel(gcsfs, gcsPath, createFileOptions);
+    this.instrumentation = ghfs.getInstrumentation();
+    this.channel = createChannel(gcsfs, gcsPath, createFileOptions,this.instrumentation);
     this.out = createOutputStream(this.channel, gcsfs.getOptions().getCloudStorageOptions());
   }
-
   private static WritableByteChannel createChannel(
-      GoogleCloudStorageFileSystem gcsfs, URI gcsPath, CreateFileOptions options)
-      throws IOException {
+          GoogleCloudStorageFileSystem gcsfs, URI gcsPath, CreateFileOptions options)
+          throws IOException {
     try {
+
+      return gcsfs.create(gcsPath, options);
+    } catch (java.nio.file.FileAlreadyExistsException e) {
+      throw (FileAlreadyExistsException)
+              new FileAlreadyExistsException(String.format("'%s' already exists", gcsPath))
+                      .initCause(e);
+    }
+  }
+  /* createChannel with http statistic */
+   private static WritableByteChannel createChannel(
+      GoogleCloudStorageFileSystem gcsfs, URI gcsPath, CreateFileOptions options, GHFSInstrumentation instrumentation)
+      throws IOException {
+    DurationTrackerFactory durationTrackerFactory = instrumentation != null ? instrumentation.getDurationTrackerFactory() : null;
+    DurationTracker get_tracker = durationTrackerFactory.trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
+    DurationTracker head_tracker = durationTrackerFactory.trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+
+    try {
+
       return gcsfs.create(gcsPath, options);
     } catch (java.nio.file.FileAlreadyExistsException e) {
       throw (FileAlreadyExistsException)
           new FileAlreadyExistsException(String.format("'%s' already exists", gcsPath))
               .initCause(e);
+
+    }finally {
+      if (gcsfs.getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (gcsfs.getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (gcsfs.getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
+
     }
   }
 
@@ -123,6 +163,7 @@ class GoogleHadoopOutputStream extends OutputStream {
       }
     }
   }
+
 
   private boolean isOpen() {
     return out != null;
