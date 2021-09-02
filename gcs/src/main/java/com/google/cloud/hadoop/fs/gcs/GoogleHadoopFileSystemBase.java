@@ -630,20 +630,26 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
       try{
       itemInfo = this.getGcsFs().getGcs().getItemInfo(storageResourceId);
+
     }catch(Exception e){
       throw  e;
     }finally {
-          if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) > 0) {
-              get_tracker.close();
+
+        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
           }
-          else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
-          }
-          if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
-              head_tracker.close();
-          }
-          else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
-          }
-              head_tracker.failed();
+        else{
+          get_tracker.close();
+        }
+        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+          head_tracker.failed();
+          head_tracker.close();
+        }
+        else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+          head_tracker.close();
+        }
+
       }
     LOG.debug("Ignoring file status");
     CompletableFuture<FSDataInputStream> result=new CompletableFuture<>();
@@ -914,17 +920,20 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
       }catch(Exception e){
           throw  e;
       }finally {
-          if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) > 0) {
-              get_tracker.close();
-          }
-          else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
-          }
-          if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
-              head_tracker.close();
-          }
-          else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
-          }
-              head_tracker.failed();
+        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+          get_tracker.failed();
+          get_tracker.close();
+        }
+        else{
+          get_tracker.close();
+        }
+        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+          head_tracker.failed();
+          head_tracker.close();
+        }
+        else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+          head_tracker.close();
+        }
       }
     logger.atFiner().log("rename(src: %s, dst: %s): true", src, dst);
   }
@@ -961,17 +970,20 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
       return false;
     }
     finally {
-        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST) > 0) {
-            get_tracker.close();
-        }
-        else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
-        }
-        if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
-            head_tracker.close();
-        }
-        else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
-        }
-            head_tracker.failed();
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
+        get_tracker.failed();
+        get_tracker.close();
+      }
+      else{
+        get_tracker.close();
+      }
+      if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST_FAILURES) > 0) {
+        head_tracker.failed();
+        head_tracker.close();
+      }
+      else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
+        head_tracker.close();
+      }
     }
     logger.atFiner().log("delete(hadoopPath: %s, recursive: %b): true", hadoopPath, recursive);
     instrumentation.fileDeleted(1);
