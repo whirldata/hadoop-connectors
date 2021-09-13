@@ -39,4 +39,10 @@ public interface GHFSOutputStreamStatistics extends Closeable, GHFSStatisticInte
      * Syncable.hsync() has been invoked.
      */
     void hsyncInvoked();
+    /**
+     * An ignored stream write exception was received.
+     */
+    void writeException();
+
+    long getWriteExceptions();
 }

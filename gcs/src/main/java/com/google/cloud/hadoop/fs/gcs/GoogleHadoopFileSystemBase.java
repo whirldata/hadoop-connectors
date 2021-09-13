@@ -1971,12 +1971,14 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
     byte[] xAttr;
     DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
     DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+    DurationTracker tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.INVOCATION_XATTR_GET_NAMED.getSymbol());
     try{
       attributes = getGcsFs().getFileInfo(getGcsPath(path)).getAttributes();
       xAttrKey = getXAttrKey(name);
       xAttr =
               attributes.containsKey(xAttrKey) ? getXAttrValue(attributes.get(xAttrKey)) : null;
     }catch(Exception e){
+      tracker.failed();
       throw  e;
     }finally {
       if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_GET_REQUEST_FAILURES) > 0) {
@@ -1993,6 +1995,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
       else if (this.getGcsFs().getGcs().getStatistics(GoogleCloudStorageStatistics.ACTION_HTTP_HEAD_REQUEST) > 0) {
         head_tracker.close();
       }
+      tracker.close();
     }
     logger.atFiner().log(
         "getXAttr(path: %s, name: %s): %s", path, name, lazy(() -> new String(xAttr, UTF_8)));
@@ -2007,6 +2010,7 @@ public abstract class GoogleHadoopFileSystemBase extends FileSystem
 
     DurationTracker get_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_GET_REQUEST.getSymbol());
     DurationTracker head_tracker = getDurationTrackerFactory().trackDuration(GHFSStatistic.ACTION_HTTP_HEAD_REQUEST.getSymbol());
+
     try{
       FileInfo fileInfo = getGcsFs().getFileInfo(getGcsPath(path));
       xAttrs =

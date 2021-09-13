@@ -53,6 +53,10 @@ class GoogleHadoopOutputStream extends OutputStream {
 
   private GHFSInstrumentation instrumentation;
 
+  //Statistics tracker for outputstream related statistics
+
+  private GHFSOutputStreamStatistics streamStatistics;
+
   /**
    * Constructs an instance of GoogleHadoopOutputStream object.
    *
@@ -73,8 +77,11 @@ class GoogleHadoopOutputStream extends OutputStream {
     this.statistics = statistics;
     GoogleCloudStorageFileSystem gcsfs = ghfs.getGcsFs();
     this.instrumentation = ghfs.getInstrumentation();
+
     this.channel = createChannel(gcsfs, gcsPath, createFileOptions,this.instrumentation);
     this.out = createOutputStream(this.channel, gcsfs.getOptions().getCloudStorageOptions());
+    this.streamStatistics = instrumentation.newOutputStreamStatistics(statistics);
+
   }
   private static WritableByteChannel createChannel(
           GoogleCloudStorageFileSystem gcsfs, URI gcsPath, CreateFileOptions options)
@@ -137,6 +144,7 @@ class GoogleHadoopOutputStream extends OutputStream {
     out.write(b);
     statistics.incrementBytesWritten(1);
     statistics.incrementWriteOps(1);
+    streamStatistics.writeBytes(1);
   }
 
   /**
@@ -147,6 +155,8 @@ class GoogleHadoopOutputStream extends OutputStream {
     throwIfNotOpen();
     out.write(b, offset, len);
     statistics.incrementBytesWritten(len);
+    streamStatistics.writeBytes(len);
+
     statistics.incrementWriteOps(1);
   }
 
@@ -157,6 +167,7 @@ class GoogleHadoopOutputStream extends OutputStream {
     if (out != null) {
       try {
         out.close();
+        streamStatistics.close();
       } finally {
         out = null;
         channel = null;
@@ -171,6 +182,7 @@ class GoogleHadoopOutputStream extends OutputStream {
 
   private void throwIfNotOpen() throws IOException {
     if (!isOpen()) {
+      streamStatistics.writeException();
       throw new ClosedChannelException();
     }
   }

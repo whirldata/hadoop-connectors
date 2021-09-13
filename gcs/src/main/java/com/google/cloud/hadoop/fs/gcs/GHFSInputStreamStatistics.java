@@ -17,12 +17,11 @@ public interface GHFSInputStreamStatistics extends AutoCloseable, GHFSStatisticI
     void seekBackwards(long negativeOffset);
     /**
      * Record a forward seek, adding a seek operation, a forward
-     * seek operation, and any bytes skipped.
+     * seek operation.
      * @param skipped bytes moved forward in stream
-     * @param bytesReadInSeek number of bytes skipped by reading from the stream.
      * If the seek was implemented by a close + reopen, set this to zero.
      */
-    void seekForwards(long skipped, long bytesReadInSeek);
+    void seekForwards(long skipped);
     /**
      * The inner stream was opened.
      * The return value is used in the input stream to decide whether it is
@@ -76,20 +75,6 @@ public interface GHFSInputStreamStatistics extends AutoCloseable, GHFSStatisticI
     @Override
     void close();
 
-    /**
-     * The input policy has been switched.
-     * @param updatedPolicy enum value of new policy.
-     */
-    void inputPolicySet(int updatedPolicy);
-
-    /**
-     * Get a reference to the change tracker statistics for this
-     * stream.
-     * @return a reference to the change tracker statistics
-     */
-
-
-    //ChangeTrackerStatistics getChangeTrackerStatistics();
 
     /**
      * A stream {@code unbuffer()} call has been made.
@@ -161,10 +146,6 @@ public interface GHFSInputStreamStatistics extends AutoCloseable, GHFSStatisticI
      */
     Long lookupGaugeValue(String name);
 
-    /**
-     * Initiate a GET request.
-     * @return duration tracker;
-     */
-    DurationTracker initiateGetRequest();
+
 
 }

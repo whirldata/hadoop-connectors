@@ -451,10 +451,10 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
      * @param filesystemStatistics thread-local FS statistics.
      * @return the new instance
      */
-//    public GHFSOutputStreamStatistics newOutputStreamStatistics(
-//            FileSystem.Statistics filesystemStatistics) {
-//        return new OutputStreamStatistics(filesystemStatistics);
-//    }
+    public GHFSOutputStreamStatistics newOutputStreamStatistics(
+            FileSystem.Statistics filesystemStatistics) {
+        return new OutputStreamStatistics(filesystemStatistics);
+    }
     /**
      * Statistics updated by an GoogleHadoopFSInputStream during its actual operation.
      * <p>
@@ -645,23 +645,16 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
         /**
          * {@inheritDoc}.
          * Increment the number of seek and forward seek
-         * operations, as well as counters of bytes skipped
-         * and bytes read in seek, where appropriate.
-         * Bytes read in seek are also added to the totalBytesRead
-         * counter.
+         * operations, as well as counters of bytes skipped in seek, where appropriate.
          */
         @Override
-        public void seekForwards(final long skipped,
-                                 long bytesReadInSeek) {
+        public void seekForwards(final long skipped) {
             seekOperations.incrementAndGet();
             forwardSeekOperations.incrementAndGet();
             if (skipped > 0) {
                 bytesSkippedOnSeek.addAndGet(skipped);
             }
-            if (bytesReadInSeek > 0) {
-                bytesDiscardedOnSeek.addAndGet(bytesReadInSeek);
-                totalBytesRead.addAndGet(bytesReadInSeek);
-            }
+
         }
 
         /**
@@ -752,19 +745,7 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
             merge(true);
         }
 
-        /**
-         * {@inheritDoc}.
-         * As well as incrementing the {@code STREAM_READ_SEEK_POLICY_CHANGED}
-         * counter, the
-         * {@code STREAM_READ_GAUGE_INPUT_POLICY} gauge is set to the new value.
-         *
-         */
-        @Override
-        public void inputPolicySet(int updatedPolicy) {
-            increment(StreamStatisticNames.STREAM_READ_SEEK_POLICY_CHANGED);
-            localIOStatistics().setGauge(STREAM_READ_GAUGE_INPUT_POLICY,
-                    updatedPolicy);
-        }
+
         /**
          * {@inheritDoc}
          * Increment the counter {@code STREAM_READ_UNBUFFERED}
@@ -887,11 +868,6 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
                     .get(STREAM_READ_GAUGE_INPUT_POLICY);
         }
 
-        @Override
-        public DurationTracker initiateGetRequest() {
-            return trackDuration(ACTION_HTTP_GET_REQUEST);
-        }
-
 
         /**
          * Merge the statistics into the filesystem's instrumentation instance.
@@ -965,6 +941,7 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
             extends AbstractGHFSStatisticsSource
             implements GHFSOutputStreamStatistics {
         private final AtomicLong bytesWritten;
+        private final AtomicLong writeExceptions;
         private final AtomicLong transferDuration = new AtomicLong(0);
         private final AtomicLong queueDuration = new AtomicLong(0);
         private final FileSystem.Statistics filesystemStatistics;
@@ -988,6 +965,7 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
 
             bytesWritten = st.getCounterReference(
                     StreamStatisticNames.STREAM_WRITE_BYTES);
+            writeExceptions = st.getCounterReference(StreamStatisticNames.STREAM_WRITE_EXCEPTIONS);
         }
 
         /**
@@ -1001,7 +979,6 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
             incrementGauge(statistic, v);
             return incGauge(statistic.getSymbol(), v);
         }
-
 
 
 
@@ -1050,9 +1027,26 @@ public class GHFSInstrumentation implements Closeable, MetricsSource, IOStatisti
          * Get the current count of bytes written.
          * @return the counter value.
          */
+
+
         @Override
         public long getBytesWritten() {
             return bytesWritten.get();
+        }
+
+        /**
+         * {@inheritDoc}.
+         */
+        @Override
+        public void writeException() {
+            writeExceptions.incrementAndGet();
+        }
+
+
+        @Override
+        public long getWriteExceptions() {
+            return lookupCounterValue(
+                    StreamStatisticNames.STREAM_WRITE_EXCEPTIONS);
         }
 
         @Override
